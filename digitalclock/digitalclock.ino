@@ -61,6 +61,10 @@ void loop()
   uint8_t hours = (byte)((t / 3600) % 24);
   uint8_t seconds = (byte)(t % 60);
   sevseg_write(digits[hours / 10], digits[hours % 10] | ((seconds & 0x01) << 7), digits[minutes / 10], digits[minutes % 10]);
+  buttons_check();
+}
+
+void buttons_check() {
   if (digitalRead(button0) == HIGH && !button0_clicked) {
       Serial.write("clicked\n");
       button0_clicked = 1;
