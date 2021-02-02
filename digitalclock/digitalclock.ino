@@ -21,7 +21,7 @@ void setup()
   pinMode(button0, INPUT);
   pinMode(button1, INPUT);
   pinMode(button2, INPUT);
-  Serial.println("setuping..");
+  Serial.println("setup done");
 }
 
 byte tcnt2;
@@ -65,9 +65,8 @@ void loop()
   uint8_t dec = (byte) (hours * 100 + minutes);
   sevseg.showNumberDecEx(minutes, 0, true, 2, 2);
   sevseg.showNumberDecEx(hours, (0x80 >> seconds % 2), true, 2, 0);
-  bool setting_button_clicked = buttons_check();
-  if (setting_button_clicked) Serial.println("click");
-//  if (setting_button_clicked) button_set_time(hours, minutes);
+//  bool setting_button_clicked = buttons_check();
+  if (buttons_check()) button_set_time(hours, minutes);
   delay(100);
 }
 
@@ -82,58 +81,60 @@ bool buttons_check() {
 }
 
 void button_set_time(uint8_t hours, uint8_t minutes) {
-  uint8_t values[] = { hours, minutes };
-  uint8_t pointer = 0;
-  uint8_t zero[] = { 0, 0x80 };
-  uint8_t count = 0;
+  uint8_t values[] = { hours, minutes }; // user input value
+  uint8_t pointer = 0; // 0 for hours, 1 for minutes
+  uint8_t zero[] = { 0, 0x80 }; // for blank 7 segment
+  uint8_t count = 0; // for blinking purposes
   while(1) {
     // blink every 900 ms
-    if (count % 3 == 0) {
-      if (count % 6 == 0) {
-        sevseg.setSegments(zero, 2, pointer*2);
-      }
-      else {
-        sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2);
-      }
+    if (count % 3 == 0) { // every 450 ms
+      if (count % 6 == 0)
+        sevseg.setSegments(zero, 2, pointer*2); // clear digit
+      else
+        sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2); // show digit
     }
 
-    // increment hours
+    // increment time
     if (digitalRead(button1) == HIGH) {
+      // for hours
       if (pointer == 0) {
         if (values[0] < 23) values[0]++;
         else values[0] = 0;
       }
+      // for minutes
       else if (pointer == 1) {
         if (values[1] < 59) values[1]++;
         else values[1] = 0;
       }
+      // show number
       sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2);
     }
 
-    // decrement hours
+    // decrement time
     if (digitalRead(button2) == HIGH) {
+      // for hours
       if (pointer == 0) {
         if (values[0] > 0) values[0]--;
         else values[0] = 23;
       }
+      // for minutes
       else if (pointer == 1) {
         if (values[1] > 0) values[1]--;
         else values[1] = 59;
       }
+      // show number
       sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2);
     }
     
     count ++;
-    delay(150);
+    delay(150); // loop delay
 
-    // change pointer
+    // setting button clicked
     if (digitalRead(button0) == HIGH) {
-        sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2);
-        if (pointer < 1) pointer++;
+        sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2); // stop blinking
+        if (pointer < 1) pointer++; // change pointer
         else {
-//          change_time(values);
-          Serial.write("check");
-          Serial.println(time);
+          change_time(values); // save time
           return;
         }
     }
@@ -141,7 +142,5 @@ void button_set_time(uint8_t hours, uint8_t minutes) {
 }
 
 void change_time(const uint8_t values[]) {
-  time = (values[1] * 60 * 1000) + (values[0] * 3600 *1000);
-  Serial.write("count ");
-          Serial.println(values[1] * 60 * 1000) + (values[0] * 3600 *1000);
+  time = ( (unsigned long int) values[1] * 60 * 1000) + ( (unsigned long int) values[0] * 3600 *1000);
 }
