@@ -5,9 +5,7 @@ uint8_t digits[] = { 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f 
 
 TM1637Display sevseg(sevseg_clock, sevseg_data);
 
-const int button0 = 6, button1 = 5, button2 = 4;
-
-int button0_clicked = 0;
+const int button0 = 6, button1 = 5, button2 = 4; // button0 setting, button1 increment time, button2 decrement time
 
 void setup()
 {
@@ -65,19 +63,8 @@ void loop()
   uint8_t dec = (byte) (hours * 100 + minutes);
   sevseg.showNumberDecEx(minutes, 0, true, 2, 2);
   sevseg.showNumberDecEx(hours, (0x80 >> seconds % 2), true, 2, 0);
-//  bool setting_button_clicked = buttons_check();
-  if (buttons_check()) button_set_time(hours, minutes);
+  if (digitalRead(button0) == HIGH) button_set_time(hours, minutes);
   delay(100);
-}
-
-bool buttons_check() {
-  if (digitalRead(button0) == HIGH && !button0_clicked) {
-      button0_clicked = 1;
-      return true;
-  } else if (digitalRead(button0) == LOW) {
-      button0_clicked = 0;
-      return false;
-  } else return false;
 }
 
 void button_set_time(uint8_t hours, uint8_t minutes) {
@@ -141,6 +128,6 @@ void button_set_time(uint8_t hours, uint8_t minutes) {
   };
 }
 
-void change_time(const uint8_t values[]) {
+void change_time(const uint8_t values[]) { // values = { hours, minutes }
   time = ( (unsigned long int) values[1] * 60 * 1000) + ( (unsigned long int) values[0] * 3600 *1000);
 }
