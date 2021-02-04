@@ -1,4 +1,5 @@
 #include <TM1637Display.h>
+#include <ModbusMaster.h>
 
 const int sevseg_clock = 7, sevseg_data = 8;
 uint8_t digits[] = { 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f }; // decimal to 7 segment
@@ -7,9 +8,13 @@ TM1637Display sevseg(sevseg_clock, sevseg_data);
 
 const int button0 = 6, button1 = 5, button2 = 4; // button0 setting, button1 increment time, button2 decrement time
 
+const int max485_de = 3, max485_re_neg = 2; // for modbus
+
+ModbusMaster node;
+
 void setup()
 {
-  Serial.begin(9600);
+//  Serial.begin(9600);
   setupInterrupt();
   pinMode(sevseg_clock, OUTPUT); // pin 7 is 7 seg clock
   pinMode(sevseg_data, OUTPUT); // pin 8 is 7 seg data
@@ -19,6 +24,16 @@ void setup()
   pinMode(button0, INPUT);
   pinMode(button1, INPUT);
   pinMode(button2, INPUT);
+
+  pinMode(max485_re_neg, OUTPUT);
+  pinMode(max485_de, OUTPUT);
+  digitalWrite(max485_re_neg, 0);
+  digitalWrite(max485_de, 0);
+
+  Serial.begin(115200);
+  node.begin(1, Serial);
+  node.preTransmission(preTransmission);
+  node.postTransmission(postTransmission);
   Serial.println("setup done");
 }
 
@@ -64,6 +79,9 @@ void loop()
   sevseg.showNumberDecEx(minutes, 0, true, 2, 2);
   sevseg.showNumberDecEx(hours, (0x80 >> seconds % 2), true, 2, 0);
   if (digitalRead(button0) == HIGH) button_set_time(hours, minutes);
+//  node.writeSingleRegister(0x40000,hours);
+//  node.writeSingleRegister(0x40001,minutes);
+//  node.writeSingleRegister(0x40002,seconds);
   delay(100);
 }
 
@@ -130,4 +148,15 @@ void button_set_time(uint8_t hours, uint8_t minutes) {
 
 void change_time(const uint8_t values[]) { // values = { hours, minutes }
   time = ( (unsigned long int) values[1] * 60 * 1000) + ( (unsigned long int) values[0] * 3600 *1000);
+}
+
+void preTransmission()
+{
+  digitalWrite(max485_re_neg, 1);
+  digitalWrite(max485_de, 1);
+}
+void postTransmission()
+{
+  digitalWrite(max485_re_neg, 0);
+  digitalWrite(max485_de, 0);
 }
