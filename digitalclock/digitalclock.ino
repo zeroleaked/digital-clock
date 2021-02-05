@@ -83,70 +83,488 @@ void loop()
   sevseg.showNumberDecEx(minutes, 0, true, 2, 2);
   sevseg.showNumberDecEx(hours, (0x80 >> seconds % 2), true, 2, 0);
   showCalendar(hours, minutes, seconds, setHari, hari, setTanggal, setBulan, setTahun);
-  if (digitalRead(button0) == HIGH) button_set_time(hours, minutes);
+  if (digitalRead(button0) == HIGH) button_set_time(hours, minutes, seconds, setHari, hari, setTanggal, setBulan, setTahun);
   delay(100);
 }
 
 void showCalendar(uint8_t hours, uint8_t minutes, uint8_t seconds, String setHari[], uint8_t hari, uint8_t setTanggal, uint8_t setBulan, unsigned long int setTahun){
-  uint8_t dd = setTanggal;
-  uint8_t mm = setBulan;
-  unsigned long int yy = setTahun;
   if ((hours == 0)&&(minutes == 0)&&(seconds == 0)){
-    dd++;
+    setTanggal++;
     hari++;
+    if ((setTanggal == 28) && (setBulan == 2)){
+      setBulan++;
+    } else if((setTanggal == 29) && (setBulan == 2) & (setTahun % 4 == 0)){
+      setBulan++;
+    } else if((setTanggal == 30) && ((setBulan == 4)||(setBulan == 6)||(setBulan == 9)||(setBulan == 11))){
+      setBulan++;
+    } else if((setTanggal == 31) && ((setBulan == 1)||(setBulan == 3)||(setBulan == 5)||(setBulan == 7)||(setBulan == 8)||(setBulan == 10)||(setBulan == 12))){
+      setBulan++;
+    }
+    if ((setTanggal == 31) && (setBulan == 12)){
+      setTahun++;
+    }
     lcd.clear();
     lcd.home();
     lcd.setCursor(0,0);
     lcd.print("Day:" + String(setHari[hari]));
     lcd.setCursor(0,1);
-    lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy));
+    lcd.print("Date:" + String(setTanggal) + "/" + String(setBulan) + "/" + String(setTahun));
   }
 }
 
-void button_set_time(uint8_t hours, uint8_t minutes) {
-  uint8_t values[] = { hours, minutes }; // user input value
+void button_set_time(uint8_t hours, uint8_t minutes, uint8_t seconds, String setHari[], uint8_t hari, uint8_t setTanggal, uint8_t setBulan, unsigned long int setTahun) {
+  uint8_t valuesjam[] = { hours, minutes}; // user input value
+  uint8_t valueshari = hari;
   uint8_t pointer = 0; // 0 for hours, 1 for minutes
   uint8_t zero[] = { 0, 0x80 }; // for blank 7 segment
   uint8_t count = 0; // for blinking purposes
+  uint8_t dd = setTanggal;
+  uint8_t mm = setBulan;
+  unsigned long int yy = setTahun;
   while(1) {
     // blink every 900 ms
-    if (count % 3 == 0) { // every 450 ms
-      if (count % 6 == 0)
-        sevseg.setSegments(zero, 2, pointer*2); // clear digit
-      else
-        sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2); // show digit
+    if (pointer < 2){
+      if (count % 3 == 0) { // every 450 ms
+        if (count % 6 == 0)
+          sevseg.setSegments(zero, 2, pointer*2); // clear digit
+        else
+          sevseg.showNumberDecEx(valuesjam[pointer], 0x40, true, 2, pointer*2); // show digit
+      }
+    } else if (pointer == 2){
+      if (count % 3 == 0) { // every 450 ms
+        if (count % 6 == 0){
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:");
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy)); // clear days
+        }  else{
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:");
+          lcd.setCursor(4,0);
+          lcd.print(String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy)); // show days
+        }
+      }
+    } else if (pointer == 3){
+      if (count % 3 == 0) { // every 450 ms
+        if (count % 6 == 0){
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:" + String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:");
+          lcd.setCursor(6,1);
+          lcd.print("/" + String(mm) + "/" + String(yy)); // clear tanggal
+        } else{
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:" + String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd));
+          if (dd <10){
+            lcd.setCursor(6,1);
+            lcd.print("/" + String(mm) + "/" + String(yy));
+          } else{
+            lcd.setCursor(7,1);
+            lcd.print("/" + String(mm) + "/" + String(yy)); // show tanggal
+          }
+        }
+      }
+    } else if (pointer == 4){
+      if (count % 3 == 0) { // every 450 ms
+        if (count % 6 == 0){
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:" + String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd) + "/");
+          if (dd < 10){
+            lcd.setCursor(8,1);
+            lcd.print("/" + String(yy));
+          } else{
+            lcd.setCursor(9,1);
+            lcd.print("/" + String(yy));            // clear bulan
+          }
+        } else{
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:" + String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd) + "/");
+          if (dd < 10){
+            lcd.setCursor(7,1);
+            lcd.print(String(mm));
+            if (mm < 10){
+              lcd.setCursor(8,1);
+              lcd.print("/" + String(yy));
+            } else {
+              lcd.setCursor(9,1);
+              lcd.print("/" + String(yy));
+            }
+          } else{
+            lcd.setCursor(8,1);
+            lcd.print(String(mm));
+            if (mm < 10){
+              lcd.setCursor(9,1);
+              lcd.print("/" + String(yy));
+            } else {
+              lcd.setCursor(10,1);
+              lcd.print("/" + String(yy));        // show bulan
+            }
+          }
+        }
+      }
+    } else{
+      if (count % 3 == 0) { // every 450 ms
+        if (count % 6 == 0){
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:" + String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd) + "/" + String(mm) + "/");          // clear tahun
+        } else{
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:" + String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd) + "/");
+          if ((dd < 10) && (mm < 10)){
+            lcd.setCursor(9,1);
+            lcd.print(String(yy));
+          } else if (((dd < 10) && (mm > 9)) || ((dd > 9) && (mm < 10))){
+            lcd.setCursor(10,1);
+            lcd.print(String(yy));
+          } else if ((dd > 9) && (mm > 9)){
+            lcd.setCursor(11,1);
+            lcd.print(String(yy));                                  // show tahun
+          }
+        }
+      }
     }
-
+    
     // increment time
     if (digitalRead(button1) == HIGH) {
       // for hours
       if (pointer == 0) {
-        if (values[0] < 23) values[0]++;
-        else values[0] = 0;
-      }
+        if (valuesjam[0] < 23){
+          valuesjam[0]++;
+        } else{
+          valuesjam[0] = 0;
+        }
+        // show number
+        sevseg.showNumberDecEx(valuesjam[pointer], 0x40, true, 2, pointer*2);
       // for minutes
-      else if (pointer == 1) {
-        if (values[1] < 59) values[1]++;
-        else values[1] = 0;
-      }
-      // show number
-      sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2);
+      } else if (pointer == 1){
+        if (valuesjam[1] < 59){
+          valuesjam[1]++;
+        } else{
+          valuesjam[1] = 0;
+        }
+        sevseg.showNumberDecEx(valuesjam[pointer], 0x40, true, 2, pointer*2);
+      // for days
+      } else if (pointer == 2){
+        if (hari < 6){
+          hari++;
+        } else{
+          hari = 0;
+        }
+        valueshari = hari;
+        lcd.clear();
+        lcd.home();
+        lcd.setCursor(0,0);
+        lcd.print("Day:");
+        lcd.setCursor(4,0);
+        lcd.print(String(setHari[valueshari]));
+        lcd.setCursor(0,1);
+        lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy));
+      // untuk tanggal
+      } else if (pointer == 3){
+        if (setBulan == 1 || setBulan == 3 || setBulan == 5 || setBulan == 7 || setBulan == 8 || setBulan == 10 || setBulan == 12){ // bulan dengan jumlah 31 hari
+          if (setTanggal < 31){
+            setTanggal++;
+          } else {
+            setTanggal = 1;
+          }
+        } else if (setBulan == 4 || setBulan == 6 || setBulan == 9 || setBulan == 11){ // bulan dengan jumlah 30 hari
+          if (setTanggal < 30){
+            setTanggal++;
+          } else{
+            setTanggal = 1;
+          }
+        } else if (setBulan == 2){
+          if (setTahun % 4 == 0){
+            if (setTanggal < 29){           // Februari di tahun kabisat
+              setTanggal++;
+            } else{                         // Februari di tahun non kabisat
+              setTanggal = 1;
+            }
+          } else{
+            if (setTanggal < 28){
+              setTanggal++;
+            } else{
+              setTanggal = 1;
+            }
+          }
+       }
+       dd = setTanggal;
+       lcd.clear();
+       lcd.home();
+       lcd.setCursor(0,0);
+       lcd.print("Day:" + String(setHari[valueshari]));
+       lcd.setCursor(0,1);
+       lcd.print("Date:");
+       lcd.setCursor(5,1);
+       lcd.print(String(dd));
+       if (dd <10){
+        lcd.setCursor(6,1);
+        lcd.print("/" + String(mm) + "/" + String(yy));
+       } else{
+        lcd.setCursor(7,1);
+        lcd.print("/" + String(mm) + "/" + String(yy));
+       }
+     // untuk bulan
+     } else if (pointer == 4){
+       if (setBulan < 12){
+          setBulan++;
+       } else {
+          setBulan = 1;
+       }
+       mm = setBulan;
+       if ((mm == 4 || mm == 6 || mm == 9 || mm == 11) && (dd > 30)){ // Bulan dengan jumlah 30 hari
+          dd = dd - 1;
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:" + String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy));
+       } else if (mm == 2){                                                            // Bulan Februari
+         dd = dd - 3;
+         lcd.clear();
+         lcd.home();
+         lcd.setCursor(0,0);
+         lcd.print("Day:" + String(setHari[valueshari]));
+         lcd.setCursor(0,1);
+         lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy)); 
+       }
+       lcd.clear();
+       lcd.home();
+       lcd.setCursor(0,0);
+       lcd.print("Day:" + String(setHari[valueshari]));
+       lcd.setCursor(0,1);
+       lcd.print("Date:" + String(dd) + "/");
+       if (dd < 10){
+        lcd.setCursor(7,1);
+        lcd.print(String(mm));
+       } else{
+        lcd.setCursor(8,1);
+        lcd.print(String(mm));
+       }
+       if (mm < 10){
+        lcd.setCursor(8,1);
+        lcd.print("/" + String(yy));
+       } else{
+        lcd.setCursor(9,1);
+        lcd.print("/" + String(yy));
+       }
+     // untuk tahun
+     } else {
+        setTahun++;
+        yy = setTahun;
+        if ((yy % 4 != 0) && (mm == 2) && (dd == 29)){
+           dd = dd - 1;
+           lcd.clear();
+           lcd.home();
+           lcd.setCursor(0,0);
+           lcd.print("Day:" + String(setHari[valueshari]));
+           lcd.setCursor(0,1);
+           lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy));
+        }
+        lcd.clear();
+        lcd.home();
+        lcd.setCursor(0,0);
+        lcd.print("Day:" + String(setHari[valueshari]));
+        lcd.setCursor(0,1);
+        lcd.print("Date:" + String(dd) + "/" + String(mm) + "/");
+        if ((dd < 10) && (mm < 10)){
+         lcd.setCursor(9,1);
+         lcd.print(String(yy));
+        } else if (((dd < 10) && (mm > 9)) || ((dd > 9) && (mm < 10))){
+         lcd.setCursor(10,1);
+         lcd.print(String(yy));
+        } else if ((dd > 9) && (mm > 9)){
+         lcd.setCursor(11,1);
+         lcd.print(String(yy));
+       }
+     }
     }
 
     // decrement time
     if (digitalRead(button2) == HIGH) {
       // for hours
       if (pointer == 0) {
-        if (values[0] > 0) values[0]--;
-        else values[0] = 23;
-      }
+        if (valuesjam[0] > 0){
+          valuesjam[0]--;
+        } else{
+          valuesjam[0] = 23;
+        }
+        // show number
+        sevseg.showNumberDecEx(valuesjam[pointer], 0x40, true, 2, pointer*2);
       // for minutes
-      else if (pointer == 1) {
-        if (values[1] > 0) values[1]--;
-        else values[1] = 59;
-      }
-      // show number
-      sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2);
+      } else if (pointer == 1){
+        if (valuesjam[1] > 0){
+          valuesjam[1]--;
+        } else{
+          valuesjam[1] = 59;
+        }
+        sevseg.showNumberDecEx(valuesjam[pointer], 0x40, true, 2, pointer*2);
+      // for days
+      } else if (pointer == 2){
+        if (hari > 0){
+          hari--;
+        } else{
+          hari = 6;
+        }
+        valueshari = hari;
+        lcd.clear();
+        lcd.home();
+        lcd.setCursor(0,0);
+        lcd.print("Day:");
+        lcd.setCursor(4,0);
+        lcd.print(String(setHari[valueshari]));
+        lcd.setCursor(0,1);
+        lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy));
+      // untuk tanggal
+      } else if (pointer == 3){
+        if (setBulan == 1 || setBulan == 3 || setBulan == 5 || setBulan == 7 || setBulan == 8 || setBulan == 10 || setBulan == 12){ // bulan dengan jumlah 31 hari
+          if (setTanggal > 1){
+            setTanggal--;
+          } else {
+            setTanggal = 31;
+          }
+        } else if (setBulan == 4 || setBulan == 6 || setBulan == 9 || setBulan == 11){ // bulan dengan jumlah 30 hari
+          if (setTanggal > 1){
+            setTanggal--;
+          } else{
+            setTanggal = 30;
+          }
+        } else if (setBulan == 2){
+          if (setTahun % 4 == 0){
+            if (setTanggal > 1){           // Februari di tahun kabisat
+              setTanggal--;
+            } else{                         // Februari di tahun non kabisat
+              setTanggal = 29;
+            }
+          } else{
+            if (setTanggal > 1){
+              setTanggal--;
+            } else{
+              setTanggal = 28;
+            }
+          }
+       }
+       dd = setTanggal;
+       lcd.clear();
+       lcd.home();
+       lcd.setCursor(0,0);
+       lcd.print("Day:" + String(setHari[valueshari]));
+       lcd.setCursor(0,1);
+       lcd.print("Date:");
+       lcd.setCursor(5,1);
+       lcd.print(String(dd));
+       if (dd <10){
+        lcd.setCursor(6,1);
+        lcd.print("/" + String(mm) + "/" + String(yy));
+       } else{
+        lcd.setCursor(7,1);
+        lcd.print("/" + String(mm) + "/" + String(yy));
+       }
+     // untuk bulan
+     } else if (pointer == 4){
+       if (setBulan > 1){
+          setBulan--;
+       } else {
+          setBulan = 12;
+       }
+       mm = setBulan;
+       if ((mm == 4 || mm == 6 || mm == 9 || mm == 11) && (dd > 30)){ // Bulan dengan jumlah 30 hari
+          dd = dd - 1;
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:" + String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy));
+       } else if (mm == 2){                                                            // Bulan Februari
+         dd = dd - 3;
+         lcd.clear();
+         lcd.home();
+         lcd.setCursor(0,0);
+         lcd.print("Day:" + String(setHari[valueshari]));
+         lcd.setCursor(0,1);
+         lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy)); 
+       }
+       lcd.clear();
+       lcd.home();
+       lcd.setCursor(0,0);
+       lcd.print("Day:" + String(setHari[valueshari]));
+       lcd.setCursor(0,1);
+       lcd.print("Date:" + String(dd) + "/");
+       if (dd < 10){
+        lcd.setCursor(7,1);
+        lcd.print(String(mm));
+       } else{
+        lcd.setCursor(8,1);
+        lcd.print(String(mm));
+       }
+       if (mm < 10){
+        lcd.setCursor(8,1);
+        lcd.print("/" + String(yy));
+       } else{
+        lcd.setCursor(9,1);
+        lcd.print("/" + String(yy));
+       }
+     // untuk tahun
+     } else {
+        setTahun--;
+        yy = setTahun;
+        if ((yy % 4 != 0) && (mm == 2) && (dd == 29)){
+           dd = dd - 1;
+           lcd.clear();
+           lcd.home();
+           lcd.setCursor(0,0);
+           lcd.print("Day:" + String(setHari[valueshari]));
+           lcd.setCursor(0,1);
+           lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy));
+        }
+        lcd.clear();
+        lcd.home();
+        lcd.setCursor(0,0);
+        lcd.print("Day:" + String(setHari[valueshari]));
+        lcd.setCursor(0,1);
+        lcd.print("Date:" + String(dd) + "/" + String(mm) + "/");
+        if ((dd < 10) && (mm < 10)){
+         lcd.setCursor(9,1);
+         lcd.print(String(yy));
+        } else if (((dd < 10) && (mm > 9)) || ((dd > 9) && (mm < 10))){
+         lcd.setCursor(10,1);
+         lcd.print(String(yy));
+        } else if ((dd > 9) && (mm > 9)){
+         lcd.setCursor(11,1);
+         lcd.print(String(yy));
+       }
+     }
     }
     
     count ++;
@@ -154,16 +572,29 @@ void button_set_time(uint8_t hours, uint8_t minutes) {
 
     // setting button clicked
     if (digitalRead(button0) == HIGH) {
-        sevseg.showNumberDecEx(values[pointer], 0x40, true, 2, pointer*2); // stop blinking
-        if (pointer < 1) pointer++; // change pointer
+        if (pointer < 2){
+          sevseg.showNumberDecEx(valuesjam[pointer], 0x40, true, 2, pointer*2); // stop blinking for digit
+        } else{
+          lcd.clear();
+          lcd.home();
+          lcd.setCursor(0,0);
+          lcd.print("Day:" + String(setHari[valueshari]));
+          lcd.setCursor(0,1);
+          lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy)); // stop blinking for day
+        }
+        if (pointer < 5) pointer++; // change pointer
         else {
-          change_time(values); // save time
+          change_time(valuesjam, setHari, valueshari, dd, mm, yy); // save time
           return;
         }
     }
   };
 }
 
-void change_time(const uint8_t values[]) { // values = { hours, minutes }
-  time = ( (unsigned long int) values[1] * 60 * 1000) + ( (unsigned long int) values[0] * 3600 *1000);
+void change_time(const uint8_t valuesjam[], String setHari[], const uint8_t valueshari, const uint8_t dd, const uint8_t mm, const unsigned long int yy){ // values = { hours, minutes}
+  time = ( (unsigned long int) valuesjam[1] * 60 * 1000) + ( (unsigned long int) valuesjam[0] * 3600 *1000);
+  setHari[hari] = setHari[valueshari];
+  setTanggal = dd;
+  setBulan = mm;
+  setTahun = yy;
 }
