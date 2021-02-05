@@ -1,16 +1,23 @@
 #include <TM1637Display.h>
-#include <ModbusMaster.h>
+//#include <ModbusMaster.h>
+#include <LiquidCrystal_I2C.h>
 
 const int sevseg_clock = 7, sevseg_data = 8;
 uint8_t digits[] = { 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f }; // decimal to 7 segment
 
 TM1637Display sevseg(sevseg_clock, sevseg_data);
 
-const int button0 = 6, button1 = 5, button2 = 4; // button0 setting, button1 increment time, button2 decrement time
+LiquidCrystal_I2C lcd(0x27,16,2);
+String setHari[] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+uint8_t hari = 4;
+uint8_t setTanggal = 5, setBulan = 2;
+unsigned long int setTahun = 2021;
+
+const int button0 = 4, button1 = 5, button2 = 6; // button0 setting, button1 increment time, button2 decrement time
 
 const int max485_de = 3, max485_re_neg = 2; // for modbus
 
-ModbusMaster node;
+//ModbusMaster node;
 
 void setup()
 {
@@ -18,9 +25,9 @@ void setup()
   setupInterrupt();
   pinMode(sevseg_clock, OUTPUT); // pin 7 is 7 seg clock
   pinMode(sevseg_data, OUTPUT); // pin 8 is 7 seg data
-  sevseg.clear();
-  sevseg.setBrightness(7);
-
+  initCalendar(setHari, hari, setTanggal, setBulan, setTahun);
+  sevseg.setBrightness(1);
+  
   pinMode(button0, INPUT);
   pinMode(button1, INPUT);
   pinMode(button2, INPUT);
@@ -31,17 +38,30 @@ void setup()
   digitalWrite(max485_de, 0);
 
   Serial.begin(115200);
-  node.begin(1, Serial);
-  node.preTransmission(preTransmission);
-  node.postTransmission(postTransmission);
+//  node.begin(1, Serial);
+//  node.preTransmission(preTransmission);
+//  node.postTransmission(postTransmission);
   Serial.println("setup done");
 }
 
 byte tcnt2;
 // initial time
-unsigned long int setMinutes = 52;
-unsigned long int setHours = 19;
+unsigned long int setMinutes = 59;
+unsigned long int setHours = 23;
 unsigned long time = (setMinutes * 60 * 1000) + (setHours * 3600 *1000); // in miliseconds
+void initCalendar(String setHari[], uint8_t hari, uint8_t setTanggal, uint8_t setBulan, unsigned long int setTahun){
+  lcd.begin();
+  lcd.backlight();
+  lcd.home();
+  lcd.noDisplay();
+  sevseg.clear();
+  delay(300);
+  lcd.display();
+  lcd.setCursor(0,0);
+  lcd.print("Day:" + String(setHari[hari]));
+  lcd.setCursor(0,1);
+  lcd.print("Date:" + String(setTanggal) + "/" + String(setBulan) + "/" + String(setTahun));
+}
   
 void setupInterrupt()
 {
@@ -78,11 +98,28 @@ void loop()
   uint8_t dec = (byte) (hours * 100 + minutes);
   sevseg.showNumberDecEx(minutes, 0, true, 2, 2);
   sevseg.showNumberDecEx(hours, (0x80 >> seconds % 2), true, 2, 0);
+  showCalendar(hours, minutes, seconds, setHari, hari, setTanggal, setBulan, setTahun);
   if (digitalRead(button0) == HIGH) button_set_time(hours, minutes);
 //  node.writeSingleRegister(0x40000,hours);
 //  node.writeSingleRegister(0x40001,minutes);
 //  node.writeSingleRegister(0x40002,seconds);
   delay(100);
+}
+
+void showCalendar(uint8_t hours, uint8_t minutes, uint8_t seconds, String setHari[], uint8_t hari, uint8_t setTanggal, uint8_t setBulan, unsigned long int setTahun){
+  uint8_t dd = setTanggal;
+  uint8_t mm = setBulan;
+  unsigned long int yy = setTahun;
+  if ((hours == 0)&&(minutes == 0)&&(seconds == 0)){
+    dd++;
+    hari++;
+    lcd.clear();
+    lcd.home();
+    lcd.setCursor(0,0);
+    lcd.print("Day:" + String(setHari[hari]));
+    lcd.setCursor(0,1);
+    lcd.print("Date:" + String(dd) + "/" + String(mm) + "/" + String(yy));
+  }
 }
 
 void button_set_time(uint8_t hours, uint8_t minutes) {
