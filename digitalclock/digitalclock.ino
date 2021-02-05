@@ -8,8 +8,8 @@ TM1637Display sevseg(sevseg_clock, sevseg_data);
 LiquidCrystal_I2C lcd(0x27,16,2);
 
 String setHari[] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-uint8_t hari = 4;
-uint8_t setTanggal = 5, setBulan = 2;
+uint8_t hari = 6;
+uint8_t setTanggal = 28, setBulan = 2;
 unsigned long int setTahun = 2021;
 const int button0 = 4, button1 = 5, button2 = 6; // button0 setting, button1 increment time, button2 decrement time
 
@@ -89,20 +89,70 @@ void loop()
 
 void showCalendar(uint8_t hours, uint8_t minutes, uint8_t seconds, String setHari[], uint8_t hari, uint8_t setTanggal, uint8_t setBulan, unsigned long int setTahun){
   if ((hours == 0)&&(minutes == 0)&&(seconds == 0)){
-    setTanggal++;
-    hari++;
-    if ((setTanggal == 28) && (setBulan == 2)){
-      setBulan++;
-    } else if((setTanggal == 29) && (setBulan == 2) & (setTahun % 4 == 0)){
-      setBulan++;
-    } else if((setTanggal == 30) && ((setBulan == 4)||(setBulan == 6)||(setBulan == 9)||(setBulan == 11))){
-      setBulan++;
-    } else if((setTanggal == 31) && ((setBulan == 1)||(setBulan == 3)||(setBulan == 5)||(setBulan == 7)||(setBulan == 8)||(setBulan == 10)||(setBulan == 12))){
-      setBulan++;
+    if (setBulan == 1 || setBulan == 3 || setBulan == 5 || setBulan == 7 || setBulan == 8 || setBulan == 10 || setBulan == 12){ // bulan dengan jumlah 31 hari
+          if (setTanggal < 31){
+            setTanggal++;
+          } else {
+            setTanggal = 1;
+          }
+    } else if (setBulan == 4 || setBulan == 6 || setBulan == 9 || setBulan == 11){ // bulan dengan jumlah 30 hari
+          if (setTanggal < 30){
+            setTanggal++;
+          } else{
+            setTanggal = 1;
+          }
+    } else if (setBulan == 2){
+          if (setTahun % 4 == 0){
+            if (setTanggal < 29){           // Februari di tahun kabisat
+              setTanggal++;
+            } else{                         // Februari di tahun non kabisat
+              setTanggal = 1;
+            }
+          } else{
+            if (setTanggal < 28){
+              setTanggal++;
+            } else{
+              setTanggal = 1;
+            }
+          }
     }
+    
+    if (hari < 6){
+      hari++;
+    } else{
+      hari = 0;
+    }
+     
+    if ((setTanggal == 28) && (setBulan == 2)){
+      if (setBulan < 12){
+          setBulan++;
+       } else {
+          setBulan = 1;
+       }
+    } else if((setTanggal == 29) && (setBulan == 2) & (setTahun % 4 == 0)){
+      if (setBulan < 12){
+          setBulan++;
+       } else {
+          setBulan = 1;
+       }
+    } else if((setTanggal == 30) && ((setBulan == 4)||(setBulan == 6)||(setBulan == 9)||(setBulan == 11))){
+      if (setBulan < 12){
+          setBulan++;
+       } else {
+          setBulan = 1;
+       }
+    } else if((setTanggal == 31) && ((setBulan == 1)||(setBulan == 3)||(setBulan == 5)||(setBulan == 7)||(setBulan == 8)||(setBulan == 10)||(setBulan == 12))){
+      if (setBulan < 12){
+          setBulan++;
+       } else {
+          setBulan = 1;
+       }
+    }
+    
     if ((setTanggal == 31) && (setBulan == 12)){
       setTahun++;
     }
+    
     lcd.clear();
     lcd.home();
     lcd.setCursor(0,0);
