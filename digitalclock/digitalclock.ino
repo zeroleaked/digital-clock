@@ -340,11 +340,12 @@ void button_set_time(uint8_t hours, uint8_t minutes, uint8_t seconds) {
        } else {
           mm = 12;
        }
-       mm = mm;
        if ((mm == 4 || mm == 6 || mm == 9 || mm == 11) && (dd > 30)){ // Bulan dengan jumlah 30 hari
           dd = dd - 1;
-       } else if (mm == 2){                                                            // Bulan Februari
-         dd = dd - 3;
+       } else if ((mm == 2) && (yy % 4 == 0) && (dd > 29)){                                                            // Bulan Februari
+         dd = 29;
+       } else if ((mm == 2) && (dd > 28)){                                                            // Bulan Februari
+         dd = 28;
        }
        previewCalendar(valueshari, dd, mm, yy);
      // untuk tahun
