@@ -99,7 +99,7 @@ void setupInterrupt()
 ISR(TIMER2_OVF_vect) {
   TCNT2 = tcnt2; // reset
   time++; // tick
-  if (!isNewDay) isNewDay = time / 86400000;
+//  if (!isNewDay) isNewDay = time / 86400000;
   time = time % 86400000; // miliseconds in a day
 }
 
@@ -112,11 +112,12 @@ void loop()
   sevseg.showNumberDecEx(minutes, 0, true, 2, 2);
   sevseg.showNumberDecEx(hours, (0x80 >> seconds % 2), true, 2, 0);
 
-  if (isNewDay) {
+  if (hours == 0 && minutes == 0 && seconds == 0 && !isNewDay) {
     incrementDay();
     showCalendar();
-    isNewDay = false;
+    isNewDay = true;
   }
+  else if (isNewDay && seconds != 0) isNewDay = false;
   
   if (digitalRead(button0) == HIGH) button_set_time(hours, minutes, seconds);
   
