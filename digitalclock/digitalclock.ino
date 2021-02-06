@@ -173,7 +173,7 @@ void showCalendar(){
 
 void button_set_time(uint8_t hours, uint8_t minutes, uint8_t seconds) {
   uint8_t valuesjam[] = { hours, minutes}; // user input value
-  uint8_t valueshari = setHari;
+  uint8_t valueshari = hari;
   uint8_t pointer = 0; // 0 for hours, 1 for minutes, 2 for day. 3 for date, 4 for month, 5 for year, 6 for exit
   uint8_t count = 0; // for blinking purposes
   uint8_t dd = tanggal;
