@@ -1,5 +1,5 @@
 #include <TM1637Display.h>
-//#include <ModbusMaster.h>
+#include <ModbusMaster.h>
 #include <LiquidCrystal_I2C.h>
 
 // seven segment constants
@@ -14,12 +14,12 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 const int button0 = 4, button1 = 5, button2 = 6; // button0 setting, button1 increment time, button2 decrement time
 
 // time constants
-String namaHari[] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+String namaHari[] = {"Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"};
 
 // time initial settings
 uint8_t setHari = 6, setTanggal = 31, setBulan = 12;
 unsigned long int setTahun = 2021;
-unsigned long int setHours = 23, setMinutes = 59;
+unsigned long int setHours = 23, setMinutes = 55;
 
 // time variables
 unsigned long time = (setMinutes * 60 * 1000) + (setHours * 3600 *1000); // in miliseconds
@@ -27,9 +27,13 @@ uint8_t hari = setHari, tanggal = setTanggal, bulan = setBulan;
 unsigned long tahun = setTahun;
 bool isNewDay = false;
 
-//const int max485_de = 3, max485_re_neg = 2; // for modbus
+const int max485_de = 3, max485_re_neg = 2; // for modbus
 
-//ModbusMaster node;
+ModbusMaster node;
+
+void preTransmission();
+void postTransmission();
+void change_time(const uint8_t valuesjam[], const uint8_t valueshari, const uint8_t dd, const uint8_t mm, const unsigned long int yy);
 
 void setup()
 {
@@ -42,16 +46,21 @@ void setup()
   pinMode(button1, INPUT);
   pinMode(button2, INPUT);
 
-//  pinMode(max485_re_neg, OUTPUT);
-//  pinMode(max485_de, OUTPUT);
-//  digitalWrite(max485_re_neg, 0);
-//  digitalWrite(max485_de, 0);
+  pinMode(max485_re_neg, OUTPUT);
+  pinMode(max485_de, OUTPUT);
+  digitalWrite(max485_re_neg, 0);
+  digitalWrite(max485_de, 0);
 
-//  Serial.begin(115200);
-//  node.begin(1, Serial);
-//  node.preTransmission(preTransmission);
-//  node.postTransmission(postTransmission);
-  Serial.println("setup done\n");
+  Serial.begin(115200);
+  node.begin(1, Serial);
+  node.preTransmission(preTransmission);
+  node.postTransmission(postTransmission);
+
+//  delay(5000);
+//  node.writeSingleRegister(0x40004,hari);
+//  node.writeSingleRegister(0x40005,tanggal);
+//  node.writeSingleRegister(0x40006,bulan);
+//  node.writeSingleRegister(0x40007,tahun);
 }
 
 byte tcnt2;
@@ -103,8 +112,17 @@ ISR(TIMER2_OVF_vect) {
   time = time % 86400000; // miliseconds in a day
 }
 
+int sendCount = 0;
+
+bool state = true;
+
+void incrementDay();
+void showCalendar();
+void button_set_time(uint8_t hours, uint8_t minutes, uint8_t seconds);
+
 void loop()
 {
+  Serial.println("loop");
   unsigned long t = (unsigned long)(time/1000);
   uint8_t minutes = (byte)((t / 60) % 60);
   uint8_t hours = (byte)((t / 3600) % 24);
@@ -120,6 +138,41 @@ void loop()
   else if (isNewDay && seconds != 0) isNewDay = false;
   
   if (digitalRead(button0) == HIGH) button_set_time(hours, minutes, seconds);
+
+  if (sendCount % 10 == 0) {
+    node.writeSingleRegister(0x40001,hours);
+    node.writeSingleRegister(0x40002,minutes);
+    node.writeSingleRegister(0x40004,hari);
+    node.writeSingleRegister(0x40005,tanggal);
+    node.writeSingleRegister(0x40006,bulan);
+    node.writeSingleRegister(0x40007,tahun);
+
+        
+    uint16_t data[7];
+    uint8_t j, result;
+    result = node.readHoldingRegisters(10, 1);
+    uint8_t change = node.getResponseBuffer(0);
+
+    if (change) {
+        result = node.readHoldingRegisters(11, 7);
+        
+        // do something with data if read is successful
+        if (result == node.ku8MBSuccess)
+        {
+          for (j = 0; j < 7; j++)
+          {
+            data[j] = node.getResponseBuffer(j);
+          }
+          
+          uint8_t valuesjam[] = {data[0], data[1]};
+          change_time(valuesjam, data[3], data[4], data[5], data[6]);
+          showCalendar();
+          node.writeSingleRegister(0x4000A,0);
+        }
+    }
+  }
+
+  sendCount++;
   
   delay(100);
 }
@@ -144,6 +197,11 @@ void incrementDay() {
         incrementMonth();
       }
   }
+  
+  node.writeSingleRegister(0x40004,hari);
+  node.writeSingleRegister(0x40005,tanggal);
+  node.writeSingleRegister(0x40006,bulan);
+  node.writeSingleRegister(0x40007,tahun);
 }
 
 void incrementMonth() {
@@ -447,13 +505,13 @@ void blinkLCD(uint8_t pointer, uint8_t valueshari, uint8_t dd, uint8_t mm, unsig
     }
 }
 
-//void preTransmission()
-//{
-//  digitalWrite(max485_re_neg, 1);
-//  digitalWrite(max485_de, 1);
-//}
-//void postTransmission()
-//{
-//  digitalWrite(max485_re_neg, 0);
-//  digitalWrite(max485_de, 0);
-//}
+void preTransmission()
+{
+  digitalWrite(max485_re_neg, 1);
+  digitalWrite(max485_de, 1);
+}
+void postTransmission()
+{
+  digitalWrite(max485_re_neg, 0);
+  digitalWrite(max485_de, 0);
+}

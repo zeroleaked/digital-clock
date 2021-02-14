@@ -1,0 +1,131 @@
+<html>
+<head>
+<title>Jam Digital Arduino</title>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+</head>
+<!-- The information between the BODY and /BODY tags is displayed.-->
+<body>
+<div class="main">
+<h1>13:30</h1>
+<h2>Sunday, 31/12/2021</h2>
+<button class="button" id="set">Atur</button>
+
+    <div class="form">
+        <input type="datetime-local" id="meeting-time"
+       name="meeting-time" value="2018-06-12T19:30">
+
+        <button class="button" id="send">Simpan</button>
+    </div>
+</div>
+<script>
+const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+var isSetting = false;
+// changeTimeUwuw(10, 30, 4, 21, 4, 1968);
+
+const changeTime = (HH,MM,day,dd,mm,yyyy) => {
+
+    const param = `?HH=${HH}&MM=${MM}&day=${day}&dd=${dd}&mm=${mm}&yyyy=${yyyy}`;
+    var ajaxcall = $.post( "/settime" + param, function(data) {
+            $("h1").text(`${zfill1(data[0], 2)}:${zfill1(data[1], 2)}`);
+            $("h2").text(`${days[data[3]]}, ${data[4]} ${months[data[5]-1]} ${data[6]}`);
+            })
+            .fail(function(e) {
+                alert( e );
+            })
+
+}
+
+$( "button#set" ).click(function(e) {
+    e.stopImmediatePropagation();
+    $( "div.form" ).toggle();
+    isSetting = !isSetting;
+});
+
+$( "button#send" ).click(function(e) {
+    e.stopImmediatePropagation();
+     const val = $( "input" ).val();
+    const date = new Date(val);
+
+    const day = (date.getDay() + 6) % 7;
+    const HH = date.getHours();
+    const MM = date.getMinutes();
+    const dd = date.getDate();
+    const mm = date.getMonth()+1;
+    const yyyy = date.getFullYear();
+    changeTime(HH, MM, day, dd, mm, yyyy);
+});
+
+function zfill1(number, size) {
+  number = number.toString();
+  while (number.length < size) number = "0" + number;
+  return number;
+}
+
+const fetchTime = () => {
+    var jqxhr = $.get( "/time", function(data) {
+        $("h1").text(`${zfill1(data[0], 2)}:${zfill1(data[1], 2)}`);
+        $("h2").text(`${days[data[3]]}, ${data[4]} ${months[data[5]-1]} ${data[6]}`);
+        if (!isSetting) {
+            $("input").val(`${data[6]}-${zfill1(data[5], 2)}-${zfill1(data[4], 2)}T${zfill1(data[0], 2)}:${zfill1(data[1], 2)}`);
+        }
+        })
+        .done(function() {
+        })
+        .fail(function(e) {
+            // alert( e );
+        })
+    
+
+}
+
+window.setInterval(fetchTime, 500)
+
+
+</script>
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+    
+        var url = 'http://127.0.0.1:5001/GUI-is-still-open'; 
+        fetch(url, { mode: 'no-cors'});
+        setInterval(function(){ fetch(url, { mode: 'no-cors'});}, 5000)();
+    
+    });
+    
+    </script>
+
+    <style>
+        div.main {
+            /* width: 100vw; */
+            margin-top: 10vh;
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        h1, h2 {
+            /* width: 100vw; */
+            text-align: center;
+        }
+
+        .button {
+            background-color:black; /* Green */
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 10px;
+            margin: 10;
+        }
+
+        div.form {
+            display:none;
+        }
+
+    </style>
+</body>
+</html>
