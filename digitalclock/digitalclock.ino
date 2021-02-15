@@ -100,17 +100,6 @@ void initModbus() {
 //  node.ku16MBResponseTimeout = 500
   node.preTransmission(preTransmission);
   node.postTransmission(postTransmission);
-
-  
-  uint8_t result = node.readHoldingRegisters(10, 1); 
-  isModbusActive = result == node.ku8MBSuccess;
-
-  if (isModbusActive) {
-    node.writeSingleRegister(0x40004,hari);
-    node.writeSingleRegister(0x40005,tanggal);
-    node.writeSingleRegister(0x40006,bulan);
-    node.writeSingleRegister(0x40007,tahun);
-  }
 }
 
 void initButton() {
@@ -141,21 +130,20 @@ void loop()
   // for every 1 second (1000 ms)
   if (loopCount % 10 == 0) {
     // check connection
-//    uint8_t result;
     uint8_t result = node.readHoldingRegisters(10, 1); 
     isModbusActive = result == node.ku8MBSuccess;
     // send time modbus
     if (isModbusActive) {
-      sendCalendar();
-      node.writeSingleRegister(0x40001,hours);
-      node.writeSingleRegister(0x40002,minutes);
-
       // check if clock set in hmi
       result = node.readHoldingRegisters(10, 1); 
       uint8_t change = node.getResponseBuffer(0);
   
       // if clock set in hmi do
       if (change) readModbus();
+      else {
+        sendCalendar();
+        sendTime(hours, minutes);
+      }
     }
   }
 
@@ -194,10 +182,17 @@ void readModbus() {
 
 // set calendar registers to pc
 void sendCalendar() {
-    node.writeSingleRegister(0x40004,hari);
-    node.writeSingleRegister(0x40005,tanggal);
-    node.writeSingleRegister(0x40006,bulan);
-    node.writeSingleRegister(0x40007,tahun);
+  node.setTransmitBuffer(0, hari);
+  node.setTransmitBuffer(1, tanggal);
+  node.setTransmitBuffer(2, bulan);
+  node.setTransmitBuffer(3, tahun);
+  node.writeMultipleRegisters(0x40004, 4);
+}
+
+void sendTime(uint8_t hours, uint8_t minutes) {
+  node.setTransmitBuffer(0, hours);
+  node.setTransmitBuffer(1, minutes);
+  node.writeMultipleRegisters(0x40001, 2);
 }
 
 void incrementDay() {
