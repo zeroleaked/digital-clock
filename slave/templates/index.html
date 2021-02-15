@@ -65,7 +65,7 @@ function zfill1(number, size) {
 
 const fetchTime = () => {
     var jqxhr = $.get( "/time", function(data) {
-        $("h1").text(`${zfill1(data[0], 2)}:${zfill1(data[1], 2)}`);
+        $("h1").text(`${zfill1(data[0], 2)}:${zfill1(data[1], 2)}:${zfill1(data[2], 2)}`);
         $("h2").text(`${days[data[3]]}, ${data[4]} ${months[data[5]-1]} ${data[6]}`);
         if (!isSetting) {
             $("input").val(`${data[6]}-${zfill1(data[5], 2)}-${zfill1(data[4], 2)}T${zfill1(data[0], 2)}:${zfill1(data[1], 2)}`);
@@ -80,7 +80,7 @@ const fetchTime = () => {
 
 }
 
-window.setInterval(fetchTime, 200)
+window.setInterval(fetchTime, 100)
 
 
 </script>

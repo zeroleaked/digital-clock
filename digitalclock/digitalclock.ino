@@ -128,7 +128,7 @@ void loop()
   }
 
   // for every 1 second (1000 ms)
-  if (loopCount % 10 == 0) {
+//  if (loopCount % 10 == 0) {
     // check connection
     uint8_t result = node.readHoldingRegisters(10, 1); 
     isModbusActive = result == node.ku8MBSuccess;
@@ -142,10 +142,10 @@ void loop()
       if (change) readModbus();
       else {
         sendCalendar();
-        sendTime(hours, minutes);
+        sendTime(hours, minutes,seconds);
       }
     }
-  }
+//  }
 
   // check button0 click
   if (digitalRead(button0) == HIGH) setTime(hours, minutes, seconds);
@@ -189,10 +189,11 @@ void sendCalendar() {
   node.writeMultipleRegisters(0x40004, 4);
 }
 
-void sendTime(uint8_t hours, uint8_t minutes) {
+void sendTime(uint8_t hours, uint8_t minutes, uint8_t seconds) {
   node.setTransmitBuffer(0, hours);
   node.setTransmitBuffer(1, minutes);
-  node.writeMultipleRegisters(0x40001, 2);
+  node.setTransmitBuffer(2, seconds);
+  node.writeMultipleRegisters(0x40001, 3);
 }
 
 void incrementDay() {

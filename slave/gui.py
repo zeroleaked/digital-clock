@@ -21,9 +21,6 @@ def index():
 @app.route('/time', methods=['GET'])
 def get_time():
     values = slave.get_values(name, address, length)
-    
-    values1 = slave.get_values(name, 10, 8)
-    # print(values1)
 
     return jsonify(list(values))
 
