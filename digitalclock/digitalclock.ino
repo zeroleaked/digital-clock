@@ -29,6 +29,7 @@ uint8_t hari = setHari, tanggal = setTanggal, bulan = setBulan;
 unsigned long tahun = setTahun;
 bool isNewDay = false;
 
+// modbus vairables
 bool isModbusActive = false;
 
 void setup()
@@ -127,17 +128,9 @@ void loop()
   uint8_t hours = (byte)((t / 3600) % 24);
   uint8_t seconds = (byte)(t % 60);
 
-//  if (node.ku8MBInvalidCRC) {
-//  sevseg.showNumberDecEx(79, 0, true, 2, 2);
-//  sevseg.showNumberDecEx(89, (0x80 >> seconds % 2), true, 2, 0);
-//  }
-
   // refresh seven segment
   sevseg.showNumberDecEx(minutes, 0, true, 2, 2);
   sevseg.showNumberDecEx(hours, (0x80 >> seconds % 2), true, 2, 0);
-
-  // check button0 click
-  if (digitalRead(button0) == HIGH) button_set_time(hours, minutes, seconds);
 
   // refresh LCD on new day
   if (isNewDay) {
@@ -165,6 +158,9 @@ void loop()
       if (change) readModbus();
     }
   }
+
+  // check button0 click
+  if (digitalRead(button0) == HIGH) setTime(hours, minutes, seconds);
 
   loopCount++;
   
@@ -254,7 +250,7 @@ void showCalendar(){
     
 }
 
-void button_set_time(uint8_t hours, uint8_t minutes, uint8_t seconds) {
+void setTime(uint8_t hours, uint8_t minutes, uint8_t seconds) {
   uint8_t valuesjam[] = { hours, minutes}; // user input value
   uint8_t valueshari = hari;
   uint8_t pointer = 0; // 0 for hours, 1 for minutes, 2 for day. 3 for date, 4 for month, 5 for year, 6 for exit
